@@ -1,0 +1,4 @@
+window.HW_CONFIG={
+  SUPABASE_URL:'https://taiwqvydfhlkyjguunrb.supabase.co',
+  SUPABASE_ANON_KEY:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRhaXdxdnlkZmhsa3lqZ3V1bnJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzOTIwNDksImV4cCI6MjA4ODk2ODA0OX0.pnB1kt2kS81Y8jrxyc3Ot2psO1YqEEZr1M8F7aRaSMw'
+};
