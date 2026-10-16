@@ -1,10 +1,10 @@
 *{box-sizing:border-box}
 body{margin:0;font-family:"Comic Sans MS","Comic Neue","Chalkboard SE","Baloo 2",system-ui,sans-serif;background:#fff7e6;color:#333;font-size:20px}
-header{position:sticky;top:0;display:flex;gap:8px;align-items:center;padding:10px;background:linear-gradient(90deg,#ff6b9d,#ffb300);color:#fff;z-index:2}
+header{position:sticky;top:0;display:flex;gap:8px;align-items:center;padding:10px;padding-top:calc(10px + max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px)));padding-left:calc(10px + max(env(safe-area-inset-left, 0px), var(--safe-area-inset-left, 0px)));padding-right:calc(10px + max(env(safe-area-inset-right, 0px), var(--safe-area-inset-right, 0px)));background:linear-gradient(90deg,#ff6b9d,#ffb300);color:#fff;z-index:2}
 header h1{flex:1;font-size:22px;margin:0}
 .hbtn{font-size:26px;background:#fff3;border:0;border-radius:14px;width:52px;height:52px}
 select{max-width:min(58vw,220px);font:inherit;font-size:16px;border-radius:12px;border:0;padding:8px 10px;min-height:52px;white-space:normal;line-height:1.2}
-main{padding:14px;max-width:640px;margin:auto}
+main{padding:14px;padding-left:calc(14px + max(env(safe-area-inset-left, 0px), var(--safe-area-inset-left, 0px)));padding-right:calc(14px + max(env(safe-area-inset-right, 0px), var(--safe-area-inset-right, 0px)));padding-bottom:calc(14px + max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px)));max-width:640px;margin:auto}
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
 .tile{border:0;border-radius:22px;color:#fff;font:inherit;font-size:22px;padding:18px 8px;min-height:110px;box-shadow:0 4px 0 #0002;position:relative}
 .tile .e{font-size:40px;display:block}
