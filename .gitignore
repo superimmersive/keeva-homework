@@ -1,1 +1,16 @@
 .DS_Store
+node_modules/
+www/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/captures/
+android/.idea/
+*.iml
+ios/App/Pods/
+ios/App/build/
+ios/DerivedData/
+ios/App/App.xcodeproj/xcuserdata/
+ios/App/App.xcworkspace/xcuserdata/
+*.apk

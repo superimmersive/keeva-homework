@@ -443,7 +443,7 @@ function install(views, ctx){
         <button class="btn o" id="rec">${af?'⏺️ Neem op':'⏺️ Record'}</button>
         <button class="btn g" id="play" disabled>${af?'▶️ Speel terug':'▶️ Play back'}</button>
         <p id="recStatus" class="ls-muted"></p>
-        <audio id="audio" controls class="ls-audio" style="display:none"></audio>
+        <audio id="audio" controls playsinline webkit-playsinline class="ls-audio" style="display:none"></audio>
         <p><button class="btn grey" id="bk">${af?'Terug':'Back'}</button></p>
       </div>`;
 
@@ -492,7 +492,8 @@ function install(views, ctx){
         if(blobUrl){URL.revokeObjectURL(blobUrl);blobUrl=null}
         audio.style.display='none'; audio.removeAttribute('src');
         playBtn.disabled=true;
-        const mime=MediaRecorder.isTypeSupported('audio/webm')?'audio/webm':'';
+        const mimeTypes=['audio/webm;codecs=opus','audio/webm','audio/mp4','audio/aac'];
+        const mime=(typeof MediaRecorder.isTypeSupported==='function'&&mimeTypes.find(t=>MediaRecorder.isTypeSupported(t)))||'';
         mediaRecorder=mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream);
         const mimeType=mediaRecorder.mimeType||'audio/webm';
         mediaRecorder.ondataavailable=e=>{if(e.data && e.data.size)chunks.push(e.data)};

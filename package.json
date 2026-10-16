@@ -1,0 +1,29 @@
+{
+  "name": "keeva-homework",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Android and iOS shells for Keeva's Homework. The website itself is the static files at the repo root.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "www": "node scripts/sync-www.mjs",
+    "sync": "node scripts/sync-www.mjs && cap sync",
+    "sync:android": "node scripts/sync-www.mjs && cap sync android",
+    "sync:ios": "node scripts/sync-www.mjs && cap sync ios",
+    "open:android": "cap open android",
+    "open:ios": "cap open ios",
+    "icons": "python3 scripts/generate-icons.py && capacitor-assets generate --android --ios --iconBackgroundColor '#ff6b9d' --iconBackgroundColorDark '#ff6b9d' --splashBackgroundColor '#fff7e6' --splashBackgroundColorDark '#fff7e6'",
+    "apk": "node scripts/sync-www.mjs && cap sync android && cd android && ./gradlew assembleDebug",
+    "check": "node scripts/check-shell.mjs"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.3",
+    "@capacitor/core": "8.5.3",
+    "@capacitor/ios": "8.5.3"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "3.0.5",
+    "@capacitor/cli": "8.5.3"
+  }
+}

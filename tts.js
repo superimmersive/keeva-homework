@@ -10,7 +10,9 @@ const SPEAK_REV='clear1';
 const AUDIO_FORMAT='audio-48khz-192kbitrate-mono-mp3';
 const TOKEN_MS=9*60*1000;
 
+const SILENT_WAV='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
 let lang='en', tokenCache=null, tokenInflight=null, audioEl=null, objectUrl=null, speakGen=0;
+let audioUnlocked=false, pendingBlob=null, unlockGen=0;
 const mem=new Map();
 const inflight=new Map();
 let voiceEn=null, voiceAf=null;
@@ -29,10 +31,56 @@ function rateKey(slower){return slower?'slow':'clear'}
 function cacheUrl(voice,rate,text){return 'https://tts.cache/'+SPEAK_REV+'/'+encodeURIComponent(voice)+'/'+encodeURIComponent(rate)+'/'+encodeURIComponent(text)}
 function memKey(voice,rate,text){return SPEAK_REV+'\0'+voice+'\0'+rate+'\0'+text}
 
+function ensureAudio(){
+  if(!audioEl){
+    audioEl=new Audio();
+    audioEl.setAttribute('playsinline','');
+    audioEl.setAttribute('webkit-playsinline','');
+    audioEl.preload='auto';
+  }
+  return audioEl;
+}
 function stopAudio(){
-  if(audioEl){try{audioEl.pause()}catch(e){} audioEl.removeAttribute('src');try{audioEl.load()}catch(e){} audioEl=null}
+  pendingBlob=null;
+  unlockGen++;
+  if(audioEl){
+    try{audioEl.pause()}catch(e){}
+    try{audioEl.currentTime=0}catch(e){}
+    audioEl.onended=null;
+    audioEl.removeAttribute('src');
+    try{audioEl.load()}catch(e){}
+  }
   if(objectUrl){try{URL.revokeObjectURL(objectUrl)}catch(e){} objectUrl=null}
 }
+function flushPending(){
+  if(!pendingBlob)return;
+  const blob=pendingBlob; pendingBlob=null;
+  playBlob(blob).catch(()=>{});
+}
+function unlockAudio(){
+  if('speechSynthesis' in global){try{speechSynthesis.resume()}catch(e){}}
+  if(audioUnlocked){flushPending();return}
+  if(objectUrl){audioUnlocked=true;return}
+  const a=ensureAudio();
+  const gen=++unlockGen;
+  try{a.src=SILENT_WAV}catch(e){return}
+  let p; try{p=a.play()}catch(e){return}
+  const done=()=>{
+    if(gen!==unlockGen)return;
+    audioUnlocked=true;
+    if(pendingBlob){flushPending();return}
+    if(objectUrl)return;
+    try{a.pause()}catch(e){}
+  };
+  if(p&&p.then)p.then(done).catch(()=>{});
+  else done();
+}
+function bindUnlock(){
+  if(typeof document==='undefined')return;
+  const onGesture=()=>unlockAudio();
+  ['touchstart','pointerdown','mousedown','keydown','click'].forEach(ev=>document.addEventListener(ev,onGesture,true));
+}
+bindUnlock();
 function stop(){
   speakGen++;
   stopAudio();
@@ -137,12 +185,25 @@ async function fetchAzureBlob(text,slower){
 }
 
 function playBlob(blob){
-  stopAudio();
+  const a=ensureAudio();
+  unlockGen++;
+  if(objectUrl){try{URL.revokeObjectURL(objectUrl)}catch(e){} objectUrl=null}
+  try{a.pause()}catch(e){}
   objectUrl=URL.createObjectURL(blob);
-  audioEl=new Audio(objectUrl);
+  a.src=objectUrl;
+  try{a.currentTime=0}catch(e){}
   const url=objectUrl;
-  audioEl.onended=()=>{if(objectUrl===url){URL.revokeObjectURL(url);objectUrl=null}};
-  return audioEl.play();
+  a.onended=()=>{if(objectUrl===url){URL.revokeObjectURL(url);objectUrl=null}};
+  let p;
+  try{p=a.play()}catch(err){if(err&&err.name==='NotAllowedError')pendingBlob=blob;return Promise.reject(err)}
+  if(p&&p.then){
+    return p.then(()=>{audioUnlocked=true}).catch(err=>{
+      if(err&&err.name==='NotAllowedError')pendingBlob=blob;
+      throw err;
+    });
+  }
+  audioUnlocked=true;
+  return p;
 }
 
 function fallbackSpeak(text,slower){
@@ -168,6 +229,7 @@ async function speak(text,opts){
     await playBlob(blob);
   }catch(e){
     if(gen!==speakGen)return;
+    if(e&&(e.name==='NotAllowedError'||e.name==='AbortError'))return;
     fallbackSpeak(text,slower);
   }
 }

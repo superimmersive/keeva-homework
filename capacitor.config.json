@@ -1,0 +1,28 @@
+{
+  "appId": "za.co.superimmersive.keevahomework",
+  "appName": "Keeva Homework",
+  "webDir": "www",
+  "backgroundColor": "#fff7e6",
+  "android": {
+    "backgroundColor": "#ff6b9d",
+    "allowMixedContent": false
+  },
+  "ios": {
+    "backgroundColor": "#ff6b9d",
+    "contentInset": "never",
+    "preferredContentMode": "mobile",
+    "limitsNavigationsToAppBoundDomains": false
+  },
+  "server": {
+    "androidScheme": "https",
+    "iosScheme": "capacitor"
+  },
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "css",
+      "initialViewportFitValueHint": "cover",
+      "style": "LIGHT",
+      "hidden": false
+    }
+  }
+}
