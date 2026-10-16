@@ -4,10 +4,14 @@ const LS={get:(k,d)=>{try{return JSON.parse(localStorage.getItem('kh_'+k))??d}ca
 const MAXW=10, esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function weekOf(d){const s=new Date(H.week1Start+'T00:00:00');return Math.floor((d-s)/(7*864e5))+1}
 function weekDates(w){const s=new Date(H.week1Start+'T00:00:00');s.setDate(s.getDate()+(w-1)*7+(w==1?1:0));const e=new Date(H.week1Start+'T00:00:00');e.setDate(e.getDate()+(w-1)*7+4);const sm=s.toLocaleString('en-GB',{month:'short'}),em=e.toLocaleString('en-GB',{month:'short'});return sm===em?s.getDate()+'–'+e.getDate()+' '+em:s.getDate()+' '+sm+'–'+e.getDate()+' '+em}
-let week=Math.min(MAXW,Math.max(1,weekOf(new Date())));
+const todayStr=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const currentWeek=Math.min(MAXW,Math.max(1,weekOf(new Date())));
+let week=currentWeek;
+const savedWeek=LS.get('selected_week',null), savedWeekDay=LS.get('selected_week_day',null);
+if(savedWeek!=null && savedWeekDay===todayStr() && +savedWeek>=currentWeek && +savedWeek<=MAXW)week=+savedWeek;
 const sel=$('#weekSel');
 for(let w=1;w<=MAXW;w++){const o=document.createElement('option');o.value=w;o.textContent='Week '+w+' · '+weekDates(w);sel.appendChild(o)}
-sel.value=week; sel.onchange=()=>{week=+sel.value;route()};
+sel.value=week; sel.onchange=()=>{week=+sel.value;LS.set('selected_week',week);LS.set('selected_week_day',todayStr());route()};
 $('#homeBtn').onclick=()=>go('home');
 let lang='en';
 function setAppLang(l){lang=l==='af'?'af':'en';if(window.TTS)TTS.setLang(lang)}
@@ -97,7 +101,23 @@ const enWords=w=>wordsFrom(H.spelling,w);
 const afWords=w=>wordsFrom(H.afrikaans.spelling,w);
 const sentence=w=>(H.sentences[w]||T().sentence(w));
 function go(v){location.hash=v} window.addEventListener('hashchange',route);
-let timerId=null;
+let timerId=null, navGen=0, pendingTimeouts=[], leaveHook=null;
+function cancelDeferred(){
+  navGen++;
+  pendingTimeouts.forEach(clearTimeout);
+  pendingTimeouts=[];
+}
+function later(fn,ms){
+  const gen=navGen;
+  const id=setTimeout(()=>{
+    pendingTimeouts=pendingTimeouts.filter(x=>x!==id);
+    if(gen!==navGen)return;
+    fn();
+  },ms);
+  pendingTimeouts.push(id);
+  return id;
+}
+function onLeave(fn){leaveHook=fn}
 let recog=null, listenAlive=false, micStream=null, micCtx=null, micNode=null;
 function stopListen(){
   listenAlive=false;
@@ -264,17 +284,28 @@ function speedRound(cfg){
   }
   timerId=setInterval(()=>{t--;const e=$('#tm');if(e)e.textContent='⏱ '+t;if(t<=0)finish()},1000);
 }
-function route(){clearInterval(timerId);stopSpeech();stopListen();const v=(location.hash||'#home').slice(1);(views[v]||views.home)();window.scrollTo(0,0)}
+function route(){
+  cancelDeferred();
+  clearInterval(timerId); timerId=null;
+  if(leaveHook){const h=leaveHook; leaveHook=null; try{h()}catch(e){}}
+  stopSpeech(); stopListen();
+  const v=(location.hash||'#home').slice(1);(views[v]||views.home)();window.scrollTo(0,0);
+}
 const none=t=>`<div class="card center"><p>${T().none(t)}</p></div>`;
 const backEnglish=()=>`<p><button class="btn grey" id="bk">${T().back}</button></p>`;
 const views={
 home(){
   setAppLang('en');
   const plan=H.plan[week]||[], cols={};H.subjects.forEach(s=>cols[s.name]=s.color);cols.English='#ff6b9d';
+  const ticks=LS.get('plan_w'+week,{});
   app.innerHTML=`<h2>Hi Keeva! 🌈</h2><p>Week ${week} · ${weekDates(week)}</p>
   <div class="tiles">${H.subjects.map(s=>`<button class="tile${s.soon?' soon':''}" style="background:${s.color}" data-id="${s.id}" ${s.soon?'disabled':''}><span class="e">${s.emoji}</span>${s.name}${s.soon?'<small>coming soon</small>':''}</button>`).join('')}</div>
-  <div class="card"><h3>📋 This week</h3>${plan.length?plan.map(t=>`<div class="task"><span><b class="tag" style="background:${cols[t.subj]||'#888'}">${t.subj}</b>${esc(t.text)}</span></div>`).join(''):'<p>No plan added for this week yet.</p>'}</div>`;
+  <div class="card"><h3>📋 This week</h3>${plan.length?plan.map((t,i)=>`<label class="task${ticks[i]?' done':''}"><input type="checkbox" data-i="${i}" ${ticks[i]?'checked':''}><span><b class="tag" style="background:${cols[t.subj]||'#888'}">${t.subj}</b>${esc(t.text)}</span></label>`).join(''):'<p>No plan added for this week yet.</p>'}</div>`;
   app.querySelectorAll('.tile:not([disabled])').forEach(b=>b.onclick=()=>go(b.dataset.id));
+  app.querySelectorAll('.task input').forEach(c=>c.onchange=()=>{
+    ticks[c.dataset.i]=c.checked; LS.set('plan_w'+week,ticks);
+    c.parentNode.classList.toggle('done',c.checked);
+  });
 },
 english(){
   setAppLang('en');
@@ -407,17 +438,19 @@ window.LifeSkillsHW.install(views,{
   app,$,LS,say,stopSpeech,go,
   getWeek:()=>week,
   setLang:setAppLang,
-  setTimer:id=>{clearInterval(timerId);timerId=id}
+  setTimer:id=>{clearInterval(timerId);timerId=id},
+  onLeave
 });
 function mathsPractice(act, backFn){
   const praise=['Super!','Well done!','Fantastic!','You got it!','Brilliant!','Clever!'];
   const qs=window.MathsHW.buildQuestions(act);
   let i=0, score=0, tries=0;
   const storeKey='maths_w'+week;
+  const leave=()=>{cancelDeferred(); backFn()};
   const draw=()=>{
     const q=qs[i];
     // text for number names; multiple choice only when the question requires it; otherwise the device keyboard
-    const money=/^[Rr]\d|\d+c$/.test(String(q.answer).trim());
+    const money=/^[Rr]\d|\d+c$/.test(String(q.answer).trim())||String(q.answer).indexOf(',')>=0;
     const mode=q.input==='text'?'text':q.input==='mc'?'mc':'num';
     app.innerHTML=`<h2>${esc(act.title)}</h2>
       <p class="center m-prog">Question ${i+1} of ${qs.length}</p>
@@ -426,12 +459,12 @@ function mathsPractice(act, backFn){
         ${q.html||''}
         ${mode==='mc'?`<div class="m-mc" id="mc">${(q.choices||[]).map(c=>`<button class="btn o m-choice" data-v="${esc(c)}">${esc(c)}</button>`).join('')}</div>`
           :`<input class="ans" id="a" inputmode="${mode==='text'||money?'text':'decimal'}" enterkeyhint="done" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="${mode==='text'?'Type the words…':money?'Type the amount…':'Type the number…'}">
-            ${money?`<p class="m-hint">Use R and c, e.g. R2.50 or 40c</p>`:''}`}
+            ${money?`<p class="m-hint">Use R and c, e.g. R2,50 or 40c</p>`:''}`}
         ${mode!=='mc'?`<button class="btn p" id="c">✔️ Check</button>`:''}
         <div class="fb" id="f"></div>
         <p><button class="btn grey" id="bk">Back</button></p>
       </div>`;
-    $('#bk').onclick=backFn;
+    $('#bk').onclick=leave;
     if(mode==='mc'){
       app.querySelectorAll('.m-choice').forEach(b=>b.onclick=()=>{
         app.querySelectorAll('.m-choice').forEach(x=>x.disabled=true);
@@ -469,7 +502,7 @@ function mathsPractice(act, backFn){
     function next(ms){
       const c=$('#c'); if(c)c.disabled=true;
       app.querySelectorAll('.m-choice').forEach(x=>x.disabled=true);
-      setTimeout(()=>{i++;tries=0;i<qs.length?draw():done()}, ms||1100);
+      later(()=>{i++;tries=0;i<qs.length?draw():done()}, ms||1100);
     }
   };
   const done=()=>{
@@ -481,7 +514,7 @@ function mathsPractice(act, backFn){
       <button class="btn p" id="again">🔄 Try again</button>
       <button class="btn grey" id="b">Back</button></div>`;
     $('#again').onclick=()=>mathsPractice(act, backFn);
-    $('#b').onclick=backFn;
+    $('#b').onclick=leave;
   };
   draw();
 }
@@ -493,7 +526,7 @@ function showDictation(s,noneLabel,storeKey,backFn){
   <textarea class="ans" id="a" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="${t.typeHere}"></textarea>
   <button class="btn p" id="c">${t.check}</button><div id="r"></div>
   ${backFn?`<p><button class="btn grey" id="b">${t.back}</button></p>`:''}</div>`;
-  $('#p').onclick=()=>say(s);$('#s').onclick=()=>say(s.replace(/ /g,', '),{slower:true});
+  $('#p').onclick=()=>say(s);$('#s').onclick=()=>say(s,{slower:true});
   if(backFn)$('#b').onclick=backFn;
   $('#c').onclick=()=>{const typed=$('#a').value.trim(),res=diff(s,typed);$('#r').innerHTML=`<p class="fb">${res.perfect?t.perfect+' '+rnd(t.praise):t.goodTryLook}</p>
    <p><b>${t.correct}</b></p><p style="font-size:24px">${esc(s)}</p><p><b>${t.yours}</b></p><div class="diff">${res.html}</div>
@@ -516,21 +549,22 @@ function diff(target,typed){
 function spellTest(ws,storeKey,backFn){
   const list=[...ws].sort(()=>Math.random()-.5);let i=0,score=0,tries=0,wrong=[];
   const t=()=>T();
+  const leave=()=>{cancelDeferred(); backFn()};
   const draw=()=>{const w=list[i];app.innerHTML=`<h2>${t().wordOf(i+1,list.length)}</h2><div class="card center">
     <button class="btn g" id="p">${t().hearWord}</button><button class="btn o" id="s">${t().sentenceBtn}</button>
     <p><input class="ans" id="a" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></p>
     <button class="btn p" id="c">${t().check}</button><div class="fb" id="f"></div></div>`;
     const play=()=>say(w);$('#p').onclick=play;$('#s').onclick=()=>say(sentence(w));
-    setTimeout(play,300);const a=$('#a');a.focus();a.onkeydown=e=>{if(e.key==='Enter')check()};$('#c').onclick=check;
+    later(play,300);const a=$('#a');a.focus();a.onkeydown=e=>{if(e.key==='Enter')check()};$('#c').onclick=check;
     function check(){const v=a.value.trim();if(!v)return;
       if(v.toLowerCase()===w.toLowerCase()){if(!tries)score++;$('#f').textContent='🌟 '+rnd(t().praise);next()}
       else if(!tries){tries=1;$('#f').textContent=t().nearly;a.value='';play()}
       else{wrong.push(w);$('#f').innerHTML=t().spelled+' <b>'+esc(w)+'</b>. '+t().goodTry;next(2200)}}
-    function next(ms){$('#c').disabled=true;setTimeout(()=>{i++;tries=0;i<list.length?draw():done()},ms||1200)}};
+    function next(ms){$('#c').disabled=true;later(()=>{i++;tries=0;i<list.length?draw():done()},ms||1200)}};
   const done=()=>{LS.set(storeKey,{score,total:list.length,wrong,date:new Date().toISOString()});
     app.innerHTML=`<div class="card center"><div class="big">${score>=list.length-1?'🏆':'⭐'} ${score}/${list.length}</div>
     ${wrong.length?`<p>${t().practise} <b>${wrong.map(esc).join(', ')}</b></p>`:`<p>${t().allCorrect}</p>`}
-    <button class="btn p" id="b">${t().back}</button></div>`;$('#b').onclick=backFn};
+    <button class="btn p" id="b">${t().back}</button></div>`;$('#b').onclick=leave};
   draw();
 }
 function lcwc(ws,i,backFn){

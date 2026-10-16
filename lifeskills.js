@@ -36,17 +36,17 @@ function brailleCell(letter, size){
 }
 
 function provinceMapSvg(){
-  // Simple stylised SA block map (not geographic accuracy – kids' overview)
-  return `<svg class="ls-map" viewBox="0 0 320 280" role="img" aria-label="South Africa provinces">
-    <rect x="40" y="10" width="120" height="70" fill="#5c6bc0" stroke="#fff" stroke-width="2"/><text x="100" y="50" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">Limpopo</text>
-    <rect x="160" y="30" width="100" height="55" fill="#ff7043" stroke="#fff" stroke-width="2"/><text x="210" y="62" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">Mpumalanga</text>
-    <rect x="40" y="80" width="90" height="55" fill="#26a69a" stroke="#fff" stroke-width="2"/><text x="85" y="112" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">North West</text>
-    <rect x="130" y="80" width="70" height="55" fill="#ab47bc" stroke="#fff" stroke-width="2"/><text x="165" y="112" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">Gauteng</text>
-    <rect x="200" y="85" width="80" height="80" fill="#66bb6a" stroke="#fff" stroke-width="2"/><text x="240" y="120" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">KwaZulu-</text><text x="240" y="134" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">Natal</text>
-    <rect x="60" y="135" width="140" height="50" fill="#ef5350" stroke="#fff" stroke-width="2"/><text x="130" y="165" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">Free State</text>
-    <rect x="20" y="185" width="100" height="70" fill="#ffca28" stroke="#fff" stroke-width="2"/><text x="70" y="215" text-anchor="middle" fill="#333" font-size="10" font-weight="700">Northern</text><text x="70" y="230" text-anchor="middle" fill="#333" font-size="10" font-weight="700">Cape</text>
-    <rect x="120" y="185" width="100" height="55" fill="#42a5f5" stroke="#fff" stroke-width="2"/><text x="170" y="210" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">Eastern</text><text x="170" y="224" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">Cape</text>
-    <rect x="100" y="230" width="110" height="45" fill="#7e57c2" stroke="#ffeb3b" stroke-width="3"/><text x="155" y="250" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">Western Cape</text><text x="155" y="264" text-anchor="middle" fill="#ffe082" font-size="9">★ George</text>
+  // Simplified SA map – Northern Cape largest; rough relative sizes/positions
+  return `<svg class="ls-map" viewBox="0 0 340 300" role="img" aria-label="South Africa provinces">
+    <polygon points="95,8 210,8 210,55 175,78 95,70" fill="#5c6bc0" stroke="#fff" stroke-width="2"/><text x="150" y="42" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">Limpopo</text>
+    <polygon points="210,20 290,28 295,95 230,100 210,55" fill="#ff7043" stroke="#fff" stroke-width="2"/><text x="250" y="62" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">Mpuma-</text><text x="250" y="74" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">langa</text>
+    <polygon points="55,70 95,70 175,78 175,120 95,125 55,110" fill="#26a69a" stroke="#fff" stroke-width="2"/><text x="110" y="100" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">North West</text>
+    <polygon points="175,78 230,100 225,130 185,128 175,120" fill="#ab47bc" stroke="#fff" stroke-width="2"/><text x="200" y="110" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">Gauteng</text>
+    <polygon points="230,100 295,95 310,175 265,190 225,150 225,130" fill="#66bb6a" stroke="#fff" stroke-width="2"/><text x="268" y="140" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">KwaZulu-</text><text x="268" y="152" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">Natal</text>
+    <polygon points="95,125 175,120 185,128 225,130 225,150 200,185 120,175" fill="#ef5350" stroke="#fff" stroke-width="2"/><text x="160" y="155" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">Free State</text>
+    <polygon points="8,100 55,70 55,110 95,125 120,175 200,185 195,230 130,255 40,240 8,180" fill="#ffca28" stroke="#fff" stroke-width="2"/><text x="95" y="175" text-anchor="middle" fill="#333" font-size="12" font-weight="700">Northern Cape</text>
+    <polygon points="200,185 265,190 280,240 220,265 195,230" fill="#42a5f5" stroke="#fff" stroke-width="2"/><text x="235" y="220" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">Eastern</text><text x="235" y="232" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">Cape</text>
+    <polygon points="40,240 130,255 195,230 220,265 180,290 70,285" fill="#7e57c2" stroke="#ffeb3b" stroke-width="3"/><text x="130" y="262" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">Western Cape</text><text x="130" y="276" text-anchor="middle" fill="#ffe082" font-size="9">★ George</text>
   </svg>`;
 }
 
@@ -86,7 +86,7 @@ const TOPICS={
     ],
     art(){return `<div class="ls-syms">
       <div class="ls-sym"><svg viewBox="0 0 80 80" width="72" height="72"><ellipse cx="40" cy="48" rx="18" ry="14" fill="#c62828"/><ellipse cx="40" cy="40" rx="14" ry="18" fill="#e53935"/><ellipse cx="40" cy="32" rx="10" ry="14" fill="#ef5350"/><circle cx="40" cy="42" r="6" fill="#ffeb3b"/><path d="M40 55 L40 72" stroke="#2e7d32" stroke-width="3"/></svg><b>Protea</b><small>blom</small></div>
-      <div class="ls-sym"><div class="ls-emoji">🦌</div><b>Springbok</b><small>dier</small></div>
+      <div class="ls-sym"><svg viewBox="0 0 80 80" width="72" height="72" aria-hidden="true"><ellipse cx="42" cy="48" rx="22" ry="12" fill="#c4a35a"/><ellipse cx="58" cy="36" rx="10" ry="8" fill="#c4a35a"/><path d="M62 30 L70 14 L66 30 Z" fill="#a8843a"/><path d="M54 30 L48 12 L52 30 Z" fill="#a8843a"/><circle cx="62" cy="34" r="1.6" fill="#333"/><path d="M28 52 L18 68" stroke="#8d6e3a" stroke-width="3" stroke-linecap="round"/><path d="M38 55 L34 70" stroke="#8d6e3a" stroke-width="3" stroke-linecap="round"/><path d="M48 55 L52 70" stroke="#8d6e3a" stroke-width="3" stroke-linecap="round"/><path d="M56 52 L66 66" stroke="#8d6e3a" stroke-width="3" stroke-linecap="round"/><path d="M22 44 Q32 38 40 42" fill="none" stroke="#a8843a" stroke-width="3"/></svg><b>Springbok</b><small>dier</small></div>
       <div class="ls-sym"><div class="ls-emoji">🐦</div><b>Bloukraanvoël</b><small>voël</small></div>
       <div class="ls-sym"><svg viewBox="0 0 80 80" width="72" height="72"><rect x="36" y="30" width="8" height="40" fill="#5d4037"/><ellipse cx="40" cy="28" rx="22" ry="16" fill="#2e7d32"/><ellipse cx="28" cy="36" rx="12" ry="8" fill="#43a047"/><ellipse cx="52" cy="36" rx="12" ry="8" fill="#43a047"/></svg><b>Geelhout</b><small>boom</small></div>
       <div class="ls-sym"><div class="ls-emoji">🐟</div><b>Galjoen</b><small>vis</small></div>
@@ -222,7 +222,7 @@ const TOPICS={
             "Huge eyes help them see at night.",
             "Big ears help them hear soft sounds.",
             "They jump quickly from tree to tree.",
-            "They eat insects, fruit and tree sap.",
+            "They eat insects, fruit and tree gum.",
             "Sight and hearing help bush babies at night."
           ],
           checklist:["A bush baby drawing (big eyes!)","Optional: soft toy if you have one","My talk plan","Name the night senses"]
@@ -251,7 +251,7 @@ const TOPICS={
 function topic(week){return TOPICS[week]||null}
 
 function install(views, ctx){
-  const {app,$,LS,say,stopSpeech,go,getWeek,setLang,setTimer}=ctx;
+  const {app,$,LS,say,stopSpeech,go,getWeek,setLang,setTimer,onLeave}=ctx;
 
   function pickKey(week, topicObj){
     return 'ls_pick_w'+week+'_'+(topicObj.pick?topicObj.pick.key:'x');
@@ -420,13 +420,19 @@ function install(views, ctx){
     if(r.t.pick && !r.opt){pickChooser(week,r.t,'lsPractice');return}
     setLang(r.t.lang);
     const af=r.t.lang==='af';
-    let mediaRecorder=null, chunks=[], blobUrl=null, recording=false;
+    let mediaRecorder=null, chunks=[], blobUrl=null, recording=false, recStream=null, tLeft=60, running=false, left=false;
 
     const cleanup=()=>{
+      if(left)return;
+      left=true;
+      running=false;
+      if(setTimer)setTimer(null);
       if(blobUrl){URL.revokeObjectURL(blobUrl);blobUrl=null}
       if(mediaRecorder && mediaRecorder.state!=='inactive'){try{mediaRecorder.stop()}catch(e){}}
       mediaRecorder=null; chunks=[]; recording=false;
+      if(recStream){recStream.getTracks().forEach(tr=>{try{tr.stop()}catch(e){}}); recStream=null}
     };
+    if(onLeave)onLeave(cleanup);
 
     app.innerHTML=`<h2>🎤 ${af?'Oefen jou praatjie':'Practice your talk'}</h2>
       <div class="card center">
@@ -441,7 +447,6 @@ function install(views, ctx){
         <p><button class="btn grey" id="bk">${af?'Terug':'Back'}</button></p>
       </div>`;
 
-    let tLeft=60, running=false;
     $('#timer').onclick=()=>{
       if(running)return;
       running=true; tLeft=60;
@@ -481,23 +486,30 @@ function install(views, ctx){
       }
       try{
         const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+        if(left){stream.getTracks().forEach(tr=>{try{tr.stop()}catch(e){}}); return}
+        recStream=stream;
         chunks=[];
         if(blobUrl){URL.revokeObjectURL(blobUrl);blobUrl=null}
         audio.style.display='none'; audio.removeAttribute('src');
         playBtn.disabled=true;
         const mime=MediaRecorder.isTypeSupported('audio/webm')?'audio/webm':'';
         mediaRecorder=mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream);
+        const mimeType=mediaRecorder.mimeType||'audio/webm';
         mediaRecorder.ondataavailable=e=>{if(e.data && e.data.size)chunks.push(e.data)};
         mediaRecorder.onstop=()=>{
           recording=false;
-          stream.getTracks().forEach(tr=>tr.stop());
-          $('#rec').textContent=af?'⏺️ Neem op':'⏺️ Record';
-          if(!chunks.length){status.textContent=af?'Geen klank opgeneem nie.':'Nothing was recorded.';return}
-          const blob=new Blob(chunks,{type:mediaRecorder.mimeType||'audio/webm'});
+          if(recStream===stream){
+            stream.getTracks().forEach(tr=>{try{tr.stop()}catch(e){}});
+            recStream=null;
+          }
+          if(left)return;
+          const recBtn=$('#rec'); if(recBtn)recBtn.textContent=af?'⏺️ Neem op':'⏺️ Record';
+          if(!chunks.length){if(status)status.textContent=af?'Geen klank opgeneem nie.':'Nothing was recorded.';return}
+          const blob=new Blob(chunks,{type:mimeType});
           blobUrl=URL.createObjectURL(blob);
-          audio.src=blobUrl; audio.style.display='block';
-          playBtn.disabled=false;
-          status.textContent=af?'Gestoor op hierdie toestel. Speel jouself terug!':'Saved on this device. Play yourself back!';
+          if(audio){audio.src=blobUrl; audio.style.display='block'}
+          if(playBtn)playBtn.disabled=false;
+          if(status)status.textContent=af?'Gestoor op hierdie toestel. Speel jouself terug!':'Saved on this device. Play yourself back!';
         };
         mediaRecorder.start();
         recording=true;
@@ -518,7 +530,7 @@ function install(views, ctx){
       audio.play().catch(()=>{status.textContent=af?'Kon nie speel nie.':'Could not play back.'});
     };
 
-    $('#bk').onclick=()=>{cleanup();go('lifeskills')};
+    $('#bk').onclick=()=>go('lifeskills');
   };
 
   views.lsChecklist=function(){

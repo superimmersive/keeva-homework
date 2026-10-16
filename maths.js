@@ -34,31 +34,35 @@ function fmtMoney(cents){
   cents=Math.round(cents);
   if(cents%100===0)return 'R'+(cents/100);
   if(cents<100)return cents+'c';
-  const r=(cents/100).toFixed(2);
-  return 'R'+r;
+  const rands=Math.floor(cents/100), c=String(cents%100).padStart(2,'0');
+  return 'R'+rands+','+c;
 }
 function parseMoney(s){
   s=String(s).trim().toLowerCase().replace(/\s+/g,'');
   if(!s)return null;
   if(/^\d+c$/.test(s))return parseInt(s,10);
-  if(/^r?\d+(\.\d{1,2})?$/.test(s)){
-    const n=parseFloat(s.replace(/^r/,''));
-    return Math.round(n*100);
+  let m=s.match(/^r?(\d+)[,.](\d{1,2})$/);
+  if(m){
+    const whole=+m[1], frac=m[2].length===1?+m[2]*10:+m[2];
+    return whole*100+frac;
   }
-  if(/^\d+$/.test(s))return parseInt(s,10); // bare number = that many (for coin totals in cents if <100, else rand)
+  m=s.match(/^r(\d+)$/);
+  if(m)return +m[1]*100;
+  if(/^\d+$/.test(s))return parseInt(s,10);
   return null;
 }
 function moneyEqual(typed, cents){
   const p=parseMoney(typed);
   if(p===cents)return true;
-  // also accept plain rand amount without R for whole rands
   const t=String(typed).trim().toLowerCase().replace(/\s+/g,'');
   if(cents%100===0 && (t===String(cents/100) || t==='r'+(cents/100)))return true;
   if(cents<100 && (t===String(cents) || t===cents+'c'))return true;
-  // R1.60 style
   if(fmtMoney(cents).toLowerCase().replace(/\s/g,'')===t)return true;
-  // allow 1.60 for R1.60
-  if(cents>=100 && t===((cents/100).toFixed(2)))return true;
+  // allow 1.60 / 1,60 for R1,60
+  if(cents>=100){
+    const dec=(cents/100).toFixed(2);
+    if(t===dec || t===dec.replace('.',','))return true;
+  }
   return false;
 }
 
@@ -147,9 +151,11 @@ function qNames(examples){
   const pool=[...(examples||[]), ...Array.from({length:12},()=>ri(100,200))];
   const n=pick(pool);
   const ans=numberName(n);
+  const hintPool=[113,125,134,148,156,167,179,182,191].filter(x=>x!==n);
+  const hintN=pick(hintPool.length?hintPool:[n===113?125:113]);
   return {
     prompt:`Write the number name for <b>${n}</b>.`,
-    html:`<p class="m-hint">e.g. ${numberName(113)}</p>`,
+    html:`<p class="m-hint">e.g. ${numberName(hintN)}</p>`,
     answer:ans, input:'text',
     check:(typed)=>namesMatch(typed, ans),
     reveal:ans
@@ -164,12 +170,16 @@ function qBreakup(examples){
   // ask for the expanded form via multiple choice, or fill tens
   const mode=Math.random()<0.5?'expand':'part';
   if(mode==='expand'){
-    const wrong=[
-      `${h} + ${t+10} + ${Math.max(0,o-1)}`,
-      `${h-100} + ${t} + ${o}`,
-      `${h} + ${o} + ${t}`,
-      `${n} + 0 + 0`
-    ].filter(x=>x!==ans);
+    const sumParts=s=>s.split('+').map(x=>parseInt(x.trim(),10)||0).reduce((a,b)=>a+b,0);
+    const candidates=[
+      `${h} + ${t+10} + ${o}`,
+      `${h} + ${Math.max(0,t-10)} + ${o}`,
+      `${h} + ${t} + ${(o+1)%10}`,
+      `${Math.max(0,h-100)} + ${t} + ${o}`,
+      `${h+100} + ${t} + ${o}`,
+      `${h} + ${t+10} + ${Math.max(0,o-1)}`
+    ];
+    const wrong=candidates.filter(x=>x!==ans && sumParts(x)!==n);
     return {
       prompt:`Break up <b>${n}</b>.`,
       html:`<div class="m-place"><span class="h">${h}</span><span class="t">${t}</span><span class="o">${o}</span></div>

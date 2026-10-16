@@ -5,10 +5,12 @@ const TOKEN_URL=(CFG.SUPABASE_URL||'https://taiwqvydfhlkyjguunrb.supabase.co')+'
 const TTS_URL='https://southafricanorth.tts.speech.microsoft.com/cognitiveservices/v1';
 const VOICES={en:'en-ZA-LeahNeural',af:'af-ZA-AdriNeural'};
 const LANGS={en:'en-ZA',af:'af-ZA'};
-const AUDIO_CACHE='keeva-tts-audio-v1';
+const AUDIO_CACHE='keeva-tts-audio-v2';
+const SPEAK_REV='clear1';
+const AUDIO_FORMAT='audio-48khz-192kbitrate-mono-mp3';
 const TOKEN_MS=9*60*1000;
 
-let lang='en', tokenCache=null, audioEl=null, objectUrl=null, speakGen=0;
+let lang='en', tokenCache=null, tokenInflight=null, audioEl=null, objectUrl=null, speakGen=0;
 const mem=new Map();
 const inflight=new Map();
 let voiceEn=null, voiceAf=null;
@@ -23,9 +25,9 @@ if('speechSynthesis' in global){pickVoice();speechSynthesis.onvoiceschanged=pick
 
 function setLang(l){lang=l==='af'?'af':'en'}
 function escapeXml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]))}
-function rateKey(slower){return slower?'-25%':'default'}
-function cacheUrl(voice,rate,text){return 'https://tts.cache/'+encodeURIComponent(voice)+'/'+encodeURIComponent(rate)+'/'+encodeURIComponent(text)}
-function memKey(voice,rate,text){return voice+'\0'+rate+'\0'+text}
+function rateKey(slower){return slower?'slow':'clear'}
+function cacheUrl(voice,rate,text){return 'https://tts.cache/'+SPEAK_REV+'/'+encodeURIComponent(voice)+'/'+encodeURIComponent(rate)+'/'+encodeURIComponent(text)}
+function memKey(voice,rate,text){return SPEAK_REV+'\0'+voice+'\0'+rate+'\0'+text}
 
 function stopAudio(){
   if(audioEl){try{audioEl.pause()}catch(e){} audioEl.removeAttribute('src');try{audioEl.load()}catch(e){} audioEl=null}
@@ -40,15 +42,21 @@ function stop(){
 async function getToken(){
   const now=Date.now();
   if(tokenCache&&tokenCache.token&&now-tokenCache.at<TOKEN_MS)return tokenCache;
-  const res=await fetch(TOKEN_URL,{
-    method:'POST',
-    headers:{Authorization:'Bearer '+ANON,apikey:ANON}
-  });
-  if(!res.ok)throw new Error('token '+res.status);
-  const data=await res.json();
-  if(!data||!data.token)throw new Error('token missing');
-  tokenCache={token:data.token,region:data.region,at:now};
-  return tokenCache;
+  if(tokenInflight)return tokenInflight;
+  tokenInflight=(async()=>{
+    try{
+      const res=await fetch(TOKEN_URL,{
+        method:'POST',
+        headers:{Authorization:'Bearer '+ANON,apikey:ANON}
+      });
+      if(!res.ok)throw new Error('token '+res.status);
+      const data=await res.json();
+      if(!data||!data.token)throw new Error('token missing');
+      tokenCache={token:data.token,region:data.region,at:Date.now()};
+      return tokenCache;
+    }finally{tokenInflight=null}
+  })();
+  return tokenInflight;
 }
 
 async function getCachedBlob(voice,rate,text){
@@ -75,11 +83,29 @@ async function putCachedBlob(voice,rate,text,blob){
   }catch(e){}
 }
 
+function speakBody(text,slower){
+  const clean=String(text).replace(/\s+/g,' ').trim();
+  if(slower){
+    const words=clean.split(' ').filter(Boolean).map(escapeXml);
+    return `<prosody rate="-12%">${words.join('<break time="380ms"/>')}</prosody>`;
+  }
+  if(!/\s/.test(clean)){
+    return `<break time="60ms"/><prosody rate="-8%"><emphasis level="moderate">${escapeXml(clean)}</emphasis></prosody>`;
+  }
+  const parts=[];
+  clean.split(/([.!?])\s+/).forEach((bit,i,all)=>{
+    if(i%2===0){
+      const mark=all[i+1]||'';
+      if(bit)parts.push(escapeXml(bit+mark));
+    }
+  });
+  const body=(parts.length?parts:[escapeXml(clean)]).join('<break time="320ms"/>');
+  return `<prosody rate="-5%">${body}</prosody>`;
+}
 function ssml(text,slower){
   const voice=VOICES[lang]||VOICES.en;
   const xmlLang=LANGS[lang]||LANGS.en;
-  const body=slower?`<prosody rate="-25%">${escapeXml(text)}</prosody>`:escapeXml(text);
-  return `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${xmlLang}"><voice name="${voice}">${body}</voice></speak>`;
+  return `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${xmlLang}"><voice name="${voice}">${speakBody(text,slower)}</voice></speak>`;
 }
 
 async function fetchAzureBlob(text,slower){
@@ -97,7 +123,7 @@ async function fetchAzureBlob(text,slower){
       headers:{
         Authorization:'Bearer '+token,
         'Content-Type':'application/ssml+xml',
-        'X-Microsoft-OutputFormat':'audio-24khz-48kbitrate-mono-mp3'
+        'X-Microsoft-OutputFormat':AUDIO_FORMAT
       },
       body:ssml(text,slower)
     });
@@ -126,7 +152,7 @@ function fallbackSpeak(text,slower){
   const voice=lang==='af'?voiceAf:voiceEn;
   if(voice){u.voice=voice;u.lang=voice.lang}
   else u.lang=lang==='af'?'af-ZA':'en-GB';
-  u.rate=slower?0.65:0.85;
+  u.rate=slower?0.72:0.92;
   speechSynthesis.speak(u);
 }
 
